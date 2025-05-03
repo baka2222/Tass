@@ -27,17 +27,38 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Панель Курьеров",
+    "site_header": "Админка Курьерского Приложения",
+    "site_brand": "Tass",
+    "welcome_sign": "Добро пожаловать в админку!",
+    "copyright": "Tass 2025",
+    "show_sidebar": True,
+}
 
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'client',
 ]
+
+AUTH_USER_MODEL = 'client.ClientUser'
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -48,6 +69,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+LANGUAGE_CODE = 'ru'
+TIME_ZONE = 'Asia/Bishkek'  # если ты в Кыргызстане
+
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
 
 ROOT_URLCONF = 'config.urls'
 
@@ -101,14 +129,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
