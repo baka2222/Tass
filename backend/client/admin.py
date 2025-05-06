@@ -1,7 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
-from .models import ClientUser, Notification
+from .models import ClientUser, Notification, Advertisement
+from image_cropping import ImageCroppingMixin
+
+
+@admin.register(Advertisement)
+class AdvertisementAdmin(ImageCroppingMixin, admin.ModelAdmin):
+    list_display = ('id', 'title', 'created_at')
+    search_fields = ('title',)
 
 
 @admin.register(ClientUser)

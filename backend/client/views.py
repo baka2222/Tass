@@ -5,9 +5,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 import requests
-
-from .models import ClientUser
-from .serializers import RegisterSerializer, VerifyCodeSerializer
+from .models import ClientUser, Advertisement
+from .serializers import RegisterSerializer, VerifyCodeSerializer, AdvertisementSerializer
 
 # Infobip credentials and base URL
 INFOBIP_API_KEY = '023d63746427b1ebd72704a043301e8b-df0f555f-11b6-4ca2-acbc-ab17d3d96c75'
@@ -74,3 +73,18 @@ class ProtectedRandomView(APIView):
 
     def get(self, request):
         return Response({'random_number': random.randint(0, 100)}, status=status.HTTP_200_OK)
+    
+
+class AdvertisementListView(ListAPIView):
+    """
+    Список всех реклам (последние первыми).
+    GET /ads/
+    """
+    queryset = Advertisement.objects.order_by('-created_at')
+    serializer_class = AdvertisementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({'request': self.request})
+        return context

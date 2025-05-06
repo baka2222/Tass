@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.utils import timezone
+from image_cropping import ImageRatioField
 
 
 class ClientUserManager(BaseUserManager):
@@ -78,3 +79,18 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.subject} to {self.user.phone_number}"
+    
+
+class Advertisement(models.Model):
+    title = models.CharField(max_length=255, help_text="Название рекламы (необязательно)", null=True, blank=True)
+    image = models.ImageField(upload_to='ads/', help_text="Изображение (желательно 3:1)")
+    cropping = ImageRatioField('image', '900x300')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Реклама'
+        verbose_name_plural = 'Рекламы'
+
+    def __str__(self):
+        return self.title or f'Ad #{self.pk}'
