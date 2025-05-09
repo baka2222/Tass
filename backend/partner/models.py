@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from image_cropping import ImageRatioField
+from datetime import datetime 
 
 User = get_user_model()
 
@@ -52,6 +53,12 @@ class Store(models.Model):
     name = models.CharField(max_length=255, verbose_name="Название магазина")
     description = models.CharField(max_length=255, verbose_name="Описание магазина")
     banner = models.ImageField(upload_to='store_banners/', verbose_name="Баннер")
+    opening_time = models.TimeField(verbose_name="Время открытия")
+    closing_time = models.TimeField(verbose_name="Время закрытия")
+
+    def is_open(self):
+        now = datetime.now().time()
+        return self.opening_time <= now <= self.closing_time
 
     class Meta:
         verbose_name = "Магазин"

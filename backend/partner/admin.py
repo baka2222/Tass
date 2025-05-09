@@ -5,15 +5,31 @@ from .models import (
     Store,
     ProductCategory,
     Product,
-    StoreFavorite
+    StoreFavorite,
+    StoreStory,
+    PromoCode,
 )
 
 
 class StoreInline(admin.TabularInline):
-    model = Store.partners.through  # Через M2M связь
+    model = Store.partners.through  
     extra = 1
-    verbose_name = "Магазин"
-    verbose_name_plural = "Магазины"
+    verbose_name = "Стори"
+    verbose_name_plural = "Сторисы"
+
+
+class PromoInline(admin.TabularInline):
+    model = PromoCode  
+    extra = 1
+    verbose_name = "Промокод"
+    verbose_name_plural = "Промокоды"
+
+
+class StoreStory(admin.TabularInline):
+    model = StoreStory  
+    extra = 1
+    verbose_name = "Сторис"
+    verbose_name_plural = "Сторисы"
 
 
 @admin.register(Partner)
@@ -41,7 +57,7 @@ class StoreAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_filter = ('category',)
     filter_horizontal = ('partners',)
-    inlines = [ProductInline]
+    inlines = [ProductInline, StoreStory, PromoInline]
 
 
 @admin.register(ProductCategory)

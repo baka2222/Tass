@@ -28,7 +28,7 @@ export function PreloaderPage({ navigation }) {
         console.warn('Token verification failed:', e);
       }
       // Fallback to Login
-      navigation.replace('Login');
+      navigation.replace('Protected');
     };
 
     bootstrapAsync();

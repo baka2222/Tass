@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegistrationView, AuthTokenView, ProtectedRandomView
+from .views import RegistrationView, AuthTokenView, ProtectedRandomView, AdvertisementListView
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
@@ -7,6 +7,7 @@ from rest_framework_simplejwt.views import (
 
 
 urlpatterns = [
+    path('ads/', AdvertisementListView.as_view(), name='advertisement_list'),
     path('register/', RegistrationView.as_view(), name='register'),
     path('auth/', AuthTokenView.as_view(), name='auth_token'),
     path('random/', ProtectedRandomView.as_view(), name='random'),

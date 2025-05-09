@@ -2,7 +2,7 @@ from django.db.models import Count, Prefetch
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from .models import Store, StoreCategory, StoreFavorite
 from .serializers import (
@@ -37,29 +37,42 @@ class StoreLikeRemoveView(APIView):
 
 class StoreListGroupedByCategoryView(ListAPIView):
     """
-    Список категорий + топ‑4 популярных магазинов в отдельной категории.
+    Список категорий + топ-4 популярных магазинов в отдельной категории.
     GET /stores/
     """
+    permission_classes = [AllowAny]
     serializer_class = StoreCategoryWithStoresSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return StoreCategory.objects.prefetch_related('stores__favorites')
+        return StoreCategory.objects.prefetch_related('stores__favorited_by')
 
     def list(self, request, *args, **kwargs):
-        top_stores = Store.objects.annotate(likes=Count('favorites')).order_by('-likes')[:4]
+        top_stores = Store.objects.annotate(
+            likes=Count('favorited_by')
+        ).order_by('-likes')[:4]
+
         top_data = {
             'id': 0,
-            'name': 'Топ 4 магазинов',
-            'stores': StoreSerializer(top_stores, many=True, context={'request': request}).data
+            'name': 'Топ',
+            'stores': StoreSerializer(
+                top_stores,
+                many=True,
+                context={'request': request}
+            ).data
         }
+
         categories = self.get_queryset()
-        cat_data = self.get_serializer(categories, many=True, context={'request': request}).data
+        cat_data = self.get_serializer(
+            categories,
+            many=True,
+            context={'request': request}
+        ).data
+
         return Response([top_data] + cat_data)
 
 
 class StoreDetailView(RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     serializer_class = StoreDetailSerializer
     lookup_url_kwarg = 'store_id'
     queryset = Store.objects.prefetch_related(

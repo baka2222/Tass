@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Advertisement
-from image_cropping.utils import get_thumbnail
+from easy_thumbnails.files import get_thumbnailer
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -37,12 +37,12 @@ class AdvertisementSerializer(serializers.ModelSerializer):
     def get_cropped(self, obj):
         request = self.context.get('request')
         if obj.image and obj.cropping:
-            thumb = get_thumbnail(
-                obj.image,
-                obj.cropping,
-                box=obj.cropping,
-                crop=True,
-                upscale=False
-            )
+            thumbnailer = get_thumbnailer(obj.image)
+            thumb = thumbnailer.get_thumbnail({
+                'size': (900, 300),  
+                'box': obj.cropping,
+                'crop': True,
+                'upscale': False,
+            })
             return request.build_absolute_uri(thumb.url)
         return None

@@ -1,6 +1,7 @@
 import random
 from django.core.cache import cache
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -82,7 +83,7 @@ class AdvertisementListView(ListAPIView):
     """
     queryset = Advertisement.objects.order_by('-created_at')
     serializer_class = AdvertisementSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

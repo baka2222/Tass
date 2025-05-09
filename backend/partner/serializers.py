@@ -1,7 +1,6 @@
 from django.db.models import Count
 from rest_framework import serializers
-from image_cropping.utils import get_thumbnail
-
+from easy_thumbnails.files import get_thumbnailer
 from .models import (
     Store,
     StoreCategory,
@@ -13,28 +12,22 @@ from .models import (
 
 
 class StoreSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для краткой информации о магазине.
-    Включает абсолютный URL баннера и подсчёт лайков.
-    """
     banner = serializers.SerializerMethodField()
     likes = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Store
-        fields = ['id', 'name', 'banner', 'category', 'likes']
+        fields = ['id', 'name', 'banner', 'category', 'likes', 'description', 'is_open']
 
     def get_banner(self, obj):
         request = self.context.get('request')
-        if obj.banner:
-            return request.build_absolute_uri(obj.banner.url)
-        return None
+        return request.build_absolute_uri(obj.banner.url) if obj.banner else None
+    
+    def get_is_open(self, obj):
+        return obj.is_open()
 
 
 class StoreCategoryWithStoresSerializer(serializers.ModelSerializer):
-    """
-    Категория магазинов с вложенными магазинами.
-    """
     stores = serializers.SerializerMethodField()
 
     class Meta:
@@ -42,9 +35,8 @@ class StoreCategoryWithStoresSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'stores']
 
     def get_stores(self, obj):
-        qs = obj.stores.annotate(likes=Count('favorites')).order_by('-likes')
+        qs = obj.stores.annotate(likes=Count('favorited_by')).order_by('-likes')
         return StoreSerializer(qs, many=True, context=self.context).data
-
 
 class PromoCodeSerializer(serializers.ModelSerializer):
     """
@@ -69,16 +61,29 @@ class StorySerializer(serializers.ModelSerializer):
     def get_icon(self, obj):
         request = self.context.get('request')
         if obj.icon and obj.icon_cropping:
-            thumb = get_thumbnail(obj.icon, obj.icon_cropping, box=obj.icon_cropping, crop=True, upscale=True)
+            thumbnailer = get_thumbnailer(obj.icon)
+            thumb = thumbnailer.get_thumbnail({
+                'size': (150, 150),
+                'box': obj.icon_cropping,
+                'crop': True,
+                'upscale': True,
+            })
             return request.build_absolute_uri(thumb.url)
         return None
 
     def get_image(self, obj):
         request = self.context.get('request')
         if obj.image and obj.image_cropping:
-            thumb = get_thumbnail(obj.image, obj.image_cropping, box=obj.image_cropping, crop=True, upscale=True)
+            thumbnailer = get_thumbnailer(obj.image)
+            thumb = thumbnailer.get_thumbnail({
+                'size': (1080, 1920),
+                'box': obj.image_cropping,
+                'crop': True,
+                'upscale': True,
+            })
             return request.build_absolute_uri(thumb.url)
         return None
+
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -94,7 +99,7 @@ class ProductCategoryWithProductsSerializer(serializers.ModelSerializer):
     """
     Сериализатор категории товаров с вложенным списком продуктов.
     """
-    products = ProductSerializer(many=True, source='products')
+    products = ProductSerializer(many=True)
 
     class Meta:
         model = ProductCategory
@@ -108,14 +113,14 @@ class StoreDetailSerializer(serializers.ModelSerializer):
     """
     banner = serializers.SerializerMethodField()
     product_categories = ProductCategoryWithProductsSerializer(
-        many=True, source='product_categories', read_only=True
+        many=True, read_only=True
     )
-    promocodes = PromoCodeSerializer(many=True, source='promo_codes', read_only=True)
-    stories = StorySerializer(many=True, source='stories', read_only=True)
+    promocodes = PromoCodeSerializer(many=True, read_only=True)
+    stories = StorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Store
-        fields = ['id', 'name', 'description', 'banner', 'product_categories', 'promocodes', 'stories']
+        fields = ['id', 'name', 'description', 'banner', 'product_categories', 'promocodes', 'stories', 'is_open']
 
     def get_banner(self, obj):
         request = self.context.get('request')
