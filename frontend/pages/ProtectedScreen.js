@@ -16,12 +16,44 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import LocationIcon from '../assets/location-icon.svg';
 import SearchIcon from '../assets/search-refraction.svg';
-import { Home, Search, CreditCard, User } from 'lucide-react-native';
+import { Home, Search, CreditCard, User, ShoppingBag, Utensils, Bike } from 'lucide-react-native';
 import { API_BASE_URL } from '../apiConfig';
+import { SearchScreen } from './SearchPage';
+import { useDispatch, useSelector } from 'react-redux';
+import ProfileScreen from './ProfilePage';
+import OrdersScreen from './OrderListPage';
 
 const Tab = createBottomTabNavigator();
 
-export function HomeScreen({navigation}) {
+const IconButtonsRow = ({ navigation }) => (
+  <View style={styles.iconsRow}>
+    <TouchableOpacity 
+      style={styles.iconButton}
+      onPress={() => navigation.navigate('Поиск')}
+    >
+      <ShoppingBag size={24} color="#217B4B" />
+      <Text style={styles.iconText}>Продукты</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity 
+      style={styles.iconButton}
+      onPress={() => navigation.navigate('Поиск')}
+    >
+      <Utensils size={24} color="#217B4B" />
+      <Text style={styles.iconText}>Доставка еды</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity style={styles.iconButton}
+      onPress={() => navigation.navigate('Courier')}>
+      <Bike size={24} color="#217B4B" />
+      <Text style={styles.iconText}>Курьер</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+export function HomeScreen({ navigation }) {
+    const dispatch = useDispatch();
+    const totalPrice = useSelector(state => state.cart.total);
   const [address, setAddress] = useState('Не указан');
   const [isFocused, setIsFocused] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -33,10 +65,28 @@ export function HomeScreen({navigation}) {
     (async () => {
       try {
         const saved = await AsyncStorage.getItem('deliveryAddress');
-        if (saved) setAddress(saved);
+        if (saved) setAddress(saved.slice(1, -1));
       } catch {}
     })();
   }, []);
+
+  useEffect(() => {
+    AsyncStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoyNjExMTY3MDA2LCJpYXQiOjE3NDcyNTM0MDYsImp0aSI6IjcwNjFhMjgyNGMxZDQ2M2NiNzlhMjMyYTExZjZhZTI4IiwidXNlcl9pZCI6MX0.GtWMQWzkGx4BAxHHS3Flv1TlPHYsgmCVAOLLxagX9f8')
+  }, []);
+
+  const [token, setToken] = useState(null)
+  
+    useEffect(() => {
+      try {
+        AsyncStorage.getItem('token').then((token) => {
+          if (token) {
+            setToken(token)
+          }
+        });
+      } catch (error) {
+        console.error('Error retrieving token from AsyncStorage', error);
+      }
+    }, [])
 
   useEffect(() => {
     (async () => {
@@ -46,15 +96,11 @@ export function HomeScreen({navigation}) {
         setLoading(false);
         return;
       }
-      const token = await AsyncStorage.getItem('accessToken');
+      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoyNjExMTY3MDA2LCJpYXQiOjE3NDcyNTM0MDYsImp0aSI6IjcwNjFhMjgyNGMxZDQ2M2NiNzlhMjMyYTExZjZhZTI4IiwidXNlcl9pZCI6MX0.GtWMQWzkGx4BAxHHS3Flv1TlPHYsgmCVAOLLxagX9f8';
       try {
         const [adsRes, storesRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/ads/`, 
-            // { headers: { Authorization: `Bearer ${token}` }}
-          ),
-          fetch(`${API_BASE_URL}/stores/`, 
-            // { headers: { Authorization: `Bearer ${token}` }}
-          ),
+          fetch(`${API_BASE_URL}/ads/`, { headers: { Authorization: `Bearer ${token}` }}),
+          fetch(`${API_BASE_URL}/stores/`, { headers: { Authorization: `Bearer ${token}` }}),
         ]);
         if (adsRes.status === 401 || storesRes.status === 401) {
           await AsyncStorage.multiRemove(['accessToken','refreshToken']);
@@ -74,6 +120,15 @@ export function HomeScreen({navigation}) {
     })();
   }, []);
 
+  const handleSearchPress = () => {
+    navigation.navigate('Поиск');
+    setIsFocused(true);
+  };
+
+  const handleMorePress = () => {
+    navigation.navigate('Поиск');
+  };
+
   if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" />;
 
   return (
@@ -86,11 +141,14 @@ export function HomeScreen({navigation}) {
               <Text style={styles.addressText}>{address}</Text>
             </View>
             <View style={styles.headerIcon}>
+              <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
               <LocationIcon width={24} height={24} />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
-        <View style={styles.searchBox}>
+
+        <TouchableOpacity style={styles.searchBox} onPress={handleSearchPress}>
           <SearchIcon width={24} height={24} style={styles.searchIcon} />
           {isFocused ? (
             <TextInput
@@ -101,11 +159,12 @@ export function HomeScreen({navigation}) {
               autoFocus
             />
           ) : (
-            <Text style={styles.searchPlaceholder} onPress={() => setIsFocused(true)}>
+            <Text style={styles.searchPlaceholder}>
               {searchValue || 'Что желаете?                                              '}
             </Text>
           )}
-        </View>
+        </TouchableOpacity>
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sliderBox}>
           {ads.length > 0 ? ads.map(ad => (
             <Image
@@ -117,20 +176,25 @@ export function HomeScreen({navigation}) {
             <Text style={styles.emptyText}>Реклама не доступна</Text>
           )}
         </ScrollView>
+
+        <IconButtonsRow navigation={navigation} />
+
         {storesData.length > 0 ? storesData.map(category => (
           <View key={category.id} style={styles.categoryBox}>
             <View style={styles.categoryHeader}>
               <Text style={styles.categoryTitle}>{category.name}</Text>
-              <Text style={styles.moreButton}>Больше →</Text>
+              <TouchableOpacity onPress={handleMorePress}>
+                <Text style={styles.moreButton}>Больше →</Text>
+              </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {Array.isArray(category.stores) && category.stores.length > 0 ? category.stores.map(store => (
+              {category.stores?.length > 0 ? category.stores.map(store => (
                 <View key={store.id} style={styles.sliderItem}>
                   <TouchableOpacity onPress={() => navigation.navigate('StoreDetail', { storeId: store.id })}>
-                  <Image
-                    source={{ uri: store.banner }}
-                    style={[styles.categoryImg, { width: 158, height: 80 }]}
-                  />
+                    <Image
+                      source={{ uri: store.banner }}
+                      style={[styles.categoryImg, { width: 158, height: 80 }]}
+                    />
                   </TouchableOpacity>
                   <Text style={styles.sliderItemTitle}>{store.name}</Text>
                   <Text style={styles.sliderItemTime}>{store.description}</Text>
@@ -144,10 +208,13 @@ export function HomeScreen({navigation}) {
           <Text style={styles.emptyText}>Категории не найдены</Text>
         )}
       </ScrollView>
+      <TouchableOpacity
+      onPress={() => navigation.navigate('Order')}>
       <View style={styles.orderButton}>
-        <Text style={styles.orderPrice}>400 с</Text>
-        <Text style={styles.orderTime}>45 мин</Text>
+        <Text style={styles.orderPrice}>{totalPrice}.00 c</Text>
+        <Text style={styles.orderTime}>К корзине</Text>
       </View>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -163,16 +230,16 @@ export default function AppTabs() {
           switch (route.name) {
             case 'Главная': return <Home color={color} size={size} />;
             case 'Поиск': return <Search color={color} size={size} />;
-            case 'Корзина': return <CreditCard color={color} size={size} />;
+            case 'Заказы': return <CreditCard color={color} size={size} />;
             case 'Профиль': return <User color={color} size={size} />;
           }
         },
       })}
     >
       <Tab.Screen name="Главная" component={HomeScreen} />
-      <Tab.Screen name="Поиск" component={HomeScreen} />
-      <Tab.Screen name="Корзина" component={HomeScreen} />
-      <Tab.Screen name="Профиль" component={HomeScreen} />
+      <Tab.Screen name="Поиск" component={SearchScreen} />
+      <Tab.Screen name="Заказы" component={OrdersScreen} />
+      <Tab.Screen name="Профиль" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -203,4 +270,20 @@ const styles = StyleSheet.create({
   orderButton: { position: 'absolute', bottom: 16, right: 24, backgroundColor: '#1c6b36', borderRadius: 36, paddingVertical: 8, paddingHorizontal: 16, alignItems: 'center' },
   orderPrice: { color: '#fff', fontWeight: '600', fontSize: 16 },
   orderTime: { color: '#fff', fontSize: 12, opacity: 0.8 },
+  iconsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 24,
+  },
+  iconButton: {
+    alignItems: 'center',
+    width: '30%',
+  },
+  iconText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#217B4B',
+    textAlign: 'center',
+  },
 });

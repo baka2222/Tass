@@ -1,6 +1,13 @@
 from rest_framework import serializers
-from .models import Advertisement
+from .models import Advertisement, Notification
 from easy_thumbnails.files import get_thumbnailer
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'user', 'subject', 'message', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
 
 class RegisterSerializer(serializers.Serializer):

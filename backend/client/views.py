@@ -1,21 +1,41 @@
 import random
 from django.core.cache import cache
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 import requests
-from .models import ClientUser, Advertisement
-from .serializers import RegisterSerializer, VerifyCodeSerializer, AdvertisementSerializer
+from .models import ClientUser, Advertisement, Notification
+from .serializers import RegisterSerializer, VerifyCodeSerializer, AdvertisementSerializer, NotificationSerializer
+from django.shortcuts import get_object_or_404
+from django.core.exceptions import PermissionDenied
 
 # Infobip credentials and base URL
 INFOBIP_API_KEY = '023d63746427b1ebd72704a043301e8b-df0f555f-11b6-4ca2-acbc-ab17d3d96c75'
 INFOBIP_BASE_URL = 'https://qd9le2.api.infobip.com'
 INFOBIP_SENDER = '+447491163443'  # Отправитель (номер, подтвержденный в Infobip)
 
+
+class UserNotificationListCreateAPIView(ListCreateAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user_id = self.kwargs['user_id']
+        get_object_or_404(ClientUser, pk=user_id)
+        return Notification.objects.filter(user_id=user_id)[:50]
+
+    def perform_create(self, serializer):
+        user_id = self.kwargs['user_id']
+        user = get_object_or_404(ClientUser, pk=user_id)
+        if not (self.request.user.is_staff or self.request.user == user):
+            raise PermissionDenied("Cannot create notifications for other users.")
+        serializer.save(user=user)
+
+
 class RegistrationView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -54,7 +74,7 @@ class RegistrationView(APIView):
 
 
 class AuthTokenView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         serializer = VerifyCodeSerializer(data=request.data)
@@ -83,7 +103,7 @@ class AdvertisementListView(ListAPIView):
     """
     queryset = Advertisement.objects.order_by('-created_at')
     serializer_class = AdvertisementSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

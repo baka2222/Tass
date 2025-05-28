@@ -74,6 +74,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+TELEGRAM_BOT_TOKEN = '7277412460:AAElBptEV8ak4hkQ_b-UmsCLhVDXQnwA1x0'
+
 LANGUAGE_CODE = 'ru'
 TIME_ZONE = 'Asia/Bishkek'  # если ты в Кыргызстане
 
@@ -149,3 +151,28 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=9999),  # или просто timedelta.max
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=9999),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "UPDATE_LAST_LOGIN": False,
+}
+
+
+CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Bishkek'
+
+FREEDOMPAY_MERCHANT_ID    = '560521'
+FREEDOMPAY_SECRET_KEY     = 'oJUUIhGVlPxdbze8'
+FREEDOMPAY_PAYOUT_KEY     = 'aAa0920EPRQA9xXg'
+FREEDOMPAY_API_URL = 'https://api.freedompay.kg/init_payment.php'
+FREEDOMPAY_STATUS_V2_URL = 'https://api.freedompay.kg/g2g/status_v2'
+FREEDOMPAY_STATUS_URL = 'https://api.freedompay.kg/v5/merchant/invoice/status'

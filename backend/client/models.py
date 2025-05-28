@@ -3,6 +3,9 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.utils import timezone
 from image_cropping import ImageRatioField
+from django.dispatch import receiver
+from django.db.models.signals import post_save
+from django.utils import timezone
 
 
 class ClientUserManager(BaseUserManager):
@@ -32,6 +35,12 @@ class ClientUser(AbstractBaseUser, PermissionsMixin):
         unique=True,
         help_text="Phone number in international format, e.g. '+1234567890'",
     )
+    name = models.CharField(
+        max_length=255,
+        help_text="Full name of the user",
+        null=True,
+        blank=True
+    )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
@@ -54,7 +63,9 @@ class Notification(models.Model):
         ClientUser,
         on_delete=models.CASCADE,
         related_name='notifications',
-        help_text="Client receiving this notification"
+        help_text="Client receiving this notification",
+        null=True,
+        blank=True
     )
     subject = models.CharField(
         max_length=255,
@@ -67,18 +78,31 @@ class Notification(models.Model):
         default=timezone.now,
         help_text="Дата и время создания уведомления"
     )
-    is_read = models.BooleanField(
-        default=False,
-        help_text="Признак прочтения"
-    )
 
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'Уведомление'
-        verbose_name_plural = 'Уведромления'
+        verbose_name_plural = 'Уведомления'
 
     def __str__(self):
-        return f"{self.subject} to {self.user.phone_number}"
+        return f"{self.subject}"
+    
+
+@receiver(post_save, sender=Notification)
+def broadcast_notification(sender, instance, created, **kwargs):
+    if created and instance.user is None:
+        users = ClientUser.objects.filter(is_active=True).values_list('pk', flat=True)
+        bulk = []
+        for uid in users:
+            bulk.append(Notification(
+                user_id=uid,
+                subject=instance.subject,
+                message=instance.message,
+                created_at=instance.created_at,
+                is_read=False
+            ))
+        instance.delete()
+        Notification.objects.bulk_create(bulk)
     
 
 class Advertisement(models.Model):

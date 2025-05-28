@@ -33,6 +33,6 @@ class ClientUserAdmin(UserAdmin):
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'subject', 'created_at', 'is_read')
+    list_display = ('user', 'subject', 'created_at')
     search_fields = ('subject', 'message')
-    list_filter = ('is_read', 'created_at')
+    list_filter = ('created_at',)
