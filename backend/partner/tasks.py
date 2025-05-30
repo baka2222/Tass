@@ -26,6 +26,7 @@ def send_client_order_notifications_task(order_id: int):
     for courier in couriers:
         text = (
             f"🚚 Новая заявка #{order.id}\n"
+            f'Клиент: {order.get_user_display()}\n'
             f"A: {order.delivery_address_a}\n"
             f"B: {order.delivery_address_b}\n"
             f"Цена: {order.delivery_price} сом\n"
@@ -44,6 +45,7 @@ def send_order_notifications_task(order_id: int):
                 else list(Courier.objects.exclude(tg_code__isnull=True)))
     for courier in couriers:
         text = (f"📦 Новый заказ #{order.id}\n"
+                f"Клиент: {order.get_user_display()}\n"
                 f"Адрес: {order.delivery_address}\n"
                 f"Сумма: {order.total_price} сом")
         kb = InlineKeyboardMarkup(inline_keyboard=[[

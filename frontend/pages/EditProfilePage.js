@@ -8,6 +8,8 @@ import {
   SafeAreaView,
   Alert,
   ActivityIndicator,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../apiConfig';
@@ -18,19 +20,55 @@ export default function EditProfileScreen({ route, navigation }) {
   const [phoneNumber] = useState(user.phone_number);
   const [name, setName] = useState(user.name || '');
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState(null)
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
     try {
       AsyncStorage.getItem('token').then((token) => {
         if (token) {
-          setToken(token)
+          setToken(token);
         }
       });
     } catch (error) {
       console.error('Error retrieving token from AsyncStorage', error);
     }
-  }, [])
+  }, []);
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Выход',
+      'Вы уверены, что хотите выйти из профиля?',
+      [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Выйти',
+          style: 'destructive',
+          onPress: async () => {
+            // Второе подтверждение
+            Alert.alert(
+              'Подтвердите выход',
+              'Выйти из аккаунта?',
+              [
+                { text: 'Нет', style: 'cancel' },
+                {
+                  text: 'Да',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await AsyncStorage.removeItem('token');
+                    await AsyncStorage.removeItem('refreshToken');
+                    navigation.reset({
+                      index: 0,
+                      routes: [{ name: 'Login' }],
+                    });
+                  }
+                }
+              ]
+            );
+          }
+        }
+      ]
+    );
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -65,38 +103,50 @@ export default function EditProfileScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={handleBack} style={styles.backIcon} disabled={loading}>
-          <ArrowLeft size={24} />
-        </TouchableOpacity>
-      </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={{ flex: 1 }}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity onPress={handleBack} style={styles.backIcon} disabled={loading}>
+              <ArrowLeft size={24} />
+            </TouchableOpacity>
+          </View>
 
-      <Text style={styles.header}>Мой профиль</Text>
+          <Text style={styles.header}>Мой профиль</Text>
 
-      <View style={styles.container}>
+          <View style={styles.container}>
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+              placeholder="Введите имя"
+            />
 
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Введите имя"
-        />
+            <TextInput
+              style={[styles.input, styles.disabledInput]}
+              value={phoneNumber}
+              editable={false}
+              placeholder={phoneNumber}
+            />
 
-        <TextInput
-          style={[styles.input, styles.disabledInput]}
-          value={phoneNumber}
-          editable={false}
-          placeholder={phoneNumber}
-        />
+            <TouchableOpacity
+              style={[
+                styles.input,
+                { backgroundColor: '#E53935', justifyContent: 'center', alignItems: 'center', marginTop: 8 }
+              ]}
+              onPress={handleLogout}
+              disabled={loading}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Выйти из профиля</Text>
+            </TouchableOpacity>
+          </View>
 
-        
-      </View>
-
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#21A25D" />
+          {loading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color="#21A25D" />
+            </View>
+          )}
         </View>
-      )}
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }

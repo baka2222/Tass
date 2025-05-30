@@ -98,10 +98,10 @@ export default function LoginScreen({ navigation }) {
       const data = await response.json();
       if (response.ok) {
         await AsyncStorage.multiSet([
-          ['accessToken', data.access],
+          ['token', data.access],
           ['refreshToken', data.refresh],
         ]);
-        navigation.navigate('ProtectedScreen');
+        navigation.navigate('Protected');
       } else {
         Alert.alert('Ошибка', data.detail || 'Неверные данные');
       }

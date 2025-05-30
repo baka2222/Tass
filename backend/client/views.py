@@ -35,8 +35,6 @@ class UserNotificationListCreateAPIView(ListCreateAPIView):
 
 
 class RegistrationView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -74,8 +72,6 @@ class RegistrationView(APIView):
 
 
 class AuthTokenView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
     def post(self, request):
         serializer = VerifyCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

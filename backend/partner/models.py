@@ -314,6 +314,9 @@ class Order(models.Model):
 
     def get_status_display(self):
         return dict(self.STATUS_CHOICES).get(self.status, self.status)
+    
+    def get_user_display(self):
+        return f'{self.user.phone_number} ({self.user.name})' if self.user else 'Неизвестный пользователь'
 
     def __str__(self):
         return f"Заказ #{self.id} — {self.get_status_display()}"
@@ -353,6 +356,9 @@ class OrderByClient(models.Model):
 
     def get_status_display(self):
         return dict(self.STATUS_CHOICES).get(self.status, self.status)
+    
+    def get_user_display(self):
+        return f'{self.user.phone_number} ({self.user.name})' if self.user else 'Неизвестный пользователь'
 
     def __str__(self):
         return f"Заказ #{self.id} — {self.get_status_display()}"

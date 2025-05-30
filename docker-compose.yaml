@@ -1,0 +1,83 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: tass
+      POSTGRES_USER: tass
+      POSTGRES_PASSWORD: tass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    command: >
+      sh -c "
+        python manage.py makemigrations &&
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - ./backend:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=postgres://tass:tass@db:5432/tass
+      - POSTGRES_DB=tass
+      - POSTGRES_USER=tass
+      - POSTGRES_PASSWORD=tass
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000"
+
+  celery:
+    build: ./backend
+    command: celery -A config worker --pool=solo -l info
+    volumes:
+      - ./backend:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=postgres://tass:tass@db:5432/tass
+      - POSTGRES_DB=tass
+      - POSTGRES_USER=tass
+      - POSTGRES_PASSWORD=tass
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+    depends_on:
+      - db
+      - redis
+
+  bot:
+    build: ./backend
+    command: python telegram_bot.py
+    volumes:
+      - ./backend:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DATABASE_URL=postgres://tass:tass@db:5432/tass
+      - POSTGRES_DB=tass
+      - POSTGRES_USER=tass
+      - POSTGRES_PASSWORD=tass
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

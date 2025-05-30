@@ -70,10 +70,6 @@ export function HomeScreen({ navigation }) {
     })();
   }, []);
 
-  useEffect(() => {
-    AsyncStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoyNjExMTY3MDA2LCJpYXQiOjE3NDcyNTM0MDYsImp0aSI6IjcwNjFhMjgyNGMxZDQ2M2NiNzlhMjMyYTExZjZhZTI4IiwidXNlcl9pZCI6MX0.GtWMQWzkGx4BAxHHS3Flv1TlPHYsgmCVAOLLxagX9f8')
-  }, []);
-
   const [token, setToken] = useState(null)
   
     useEffect(() => {
@@ -81,10 +77,12 @@ export function HomeScreen({ navigation }) {
         AsyncStorage.getItem('token').then((token) => {
           if (token) {
             setToken(token)
+          } else {
+            navigation.navigate('Login');
           }
         });
       } catch (error) {
-        console.error('Error retrieving token from AsyncStorage', error);
+        navigation.navigate('Login');
       }
     }, [])
 

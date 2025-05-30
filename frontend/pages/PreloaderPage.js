@@ -12,27 +12,53 @@ export function PreloaderPage({ navigation }) {
         await new Promise(resolve => setTimeout(resolve, 3000));
 
         // Get tokens
-        const tokens = await AsyncStorage.multiGet(['accessToken', 'refreshToken']);
-        const accessToken = tokens.find(item => item[0] === 'accessToken')[1];
+        const tokens = await AsyncStorage.multiGet(['token', 'refreshToken']);
+        let accessToken = tokens.find(item => item[0] === 'token')[1];
+        const refreshToken = tokens.find(item => item[0] === 'refreshToken')[1];
 
+        let response = null;
         if (accessToken) {
-          // Verify token validity by hitting a protected endpoint
-          const response = await fetch(`${API_BASE_URL}/random/`, {
+          response = await fetch(`${API_BASE_URL}/random/`, {
             headers: { Authorization: `Bearer ${accessToken}` },
           });
-          if (response.ok) {
-            return navigation.replace('Protected');
+        }
+
+        // Если access token невалиден, пробуем refresh
+        if (!response || response.status === 401) {
+          if (refreshToken) {
+            const refreshResp = await fetch(`${API_BASE_URL}/token/refresh/`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refresh: refreshToken }),
+            });
+            const data = await refreshResp.json();
+            if (data.access) {
+              await AsyncStorage.setItem('token', data.access);
+              accessToken = data.access;
+              // Пробуем снова
+              response = await fetch(`${API_BASE_URL}/random/`, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+              });
+              if (response.ok) {
+                return navigation.replace('Protected');
+              }
+            }
           }
+          // Если refresh не сработал — на логин
+          return navigation.replace('Login');
+        }
+
+        if (response && response.ok) {
+          return navigation.replace('Protected');
         }
       } catch (e) {
         console.warn('Token verification failed:', e);
       }
-      // Fallback to Login
-      navigation.replace('Protected');
+      navigation.replace('Login');
     };
 
     bootstrapAsync();
-  }, [navigation]);
+  }, []);
 
   return (
     <View style={styles.container}>

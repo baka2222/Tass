@@ -229,13 +229,16 @@ export default function OrderScreen({ navigation }) {
       </ScrollView>
 
       <TouchableOpacity
-        style={[styles.finalButton, promoTouched && !canApplyPromo && styles.disabledButton]}
-        onPress={proceed}
-        disabled={promoTouched && !canApplyPromo}
-      >
-        <Text style={styles.finalTotal}>{finalTotal} с</Text>
-        <Text style={styles.finalNext}>Оформить</Text>
-      </TouchableOpacity>
+  style={[
+    styles.finalButton,
+    promoTouched && promoCode.length > 0 && !canApplyPromo && styles.disabledButton
+  ]}
+  onPress={proceed}
+  disabled={promoTouched && promoCode.length > 0 && !canApplyPromo}
+>
+  <Text style={styles.finalTotal}>{finalTotal} с</Text>
+  <Text style={styles.finalNext}>Оформить</Text>
+</TouchableOpacity>
     </SafeAreaView>
   );
 }

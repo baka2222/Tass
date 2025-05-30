@@ -14,8 +14,8 @@ class AdvertisementAdmin(ImageCroppingMixin, admin.ModelAdmin):
 @admin.register(ClientUser)
 class ClientUserAdmin(UserAdmin):
     model = ClientUser
-    list_display = ('phone_number', 'is_staff', 'is_superuser')
-    search_fields = ('phone_number',)
+    list_display = ('phone_number', 'is_staff', 'is_superuser', 'name')
+    search_fields = ('phone_number', 'name')
     ordering = ('phone_number',)
     fieldsets = (
         (None, {'fields': ('phone_number', 'password')}),

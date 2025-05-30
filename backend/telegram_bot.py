@@ -175,6 +175,9 @@ async def select_branch(callback: types.CallbackQuery):
 
     if partner.tg_code:
         await bot.send_message(partner.tg_code, receipt)
+        await bot.send_message(
+            chat_id=courier.tg_code,
+            text=receipt)
     await callback.answer("✅ Филиал выбран и чек отправлен.")
 
 
